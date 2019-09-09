@@ -123,7 +123,14 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         RoleModel role = hasRole(realm, mapperModel, context);
         if (role == null) {
-            user.deleteRoleMapping(role);
+        	// revoke role when claim is _not_ here
+            String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+            RoleModel roleToRevoke = KeycloakModelUtils.getRoleFromString(realm, roleName);
+            if (roleToRevoke == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
+            user.deleteRoleMapping(roleToRevoke);
+        } else {
+        	// grant role when claim is here
+            user.grantRole(role);
         }
     }
 

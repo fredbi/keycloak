@@ -98,6 +98,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (hasClaimValue(mapperModel, context)) {
+        	// grant role when claim is here
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.grantRole(role);
@@ -107,12 +108,16 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        if (!hasClaimValue(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-            user.deleteRoleMapping(role);
-        }
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
 
+        if (!hasClaimValue(mapperModel, context)) {
+        	// revoke role when claim is _not_ here
+            user.deleteRoleMapping(role);
+        } else {
+        	// grant role when claim is here
+            user.grantRole(role);
+        }
     }
 
     @Override
