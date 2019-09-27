@@ -29,6 +29,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,8 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    private static final Logger logger = Logger.getLogger(ClaimToRoleMapper.class);
 
     static {
         ProviderConfigProperty property;
@@ -102,6 +105,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.grantRole(role);
+            logger.infof("granting role %s to brokered user: %s", role.getName(), user.getUsername());
         }
     }
 
@@ -114,9 +118,11 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
         if (!hasClaimValue(mapperModel, context)) {
         	// revoke role when claim is _not_ here
             user.deleteRoleMapping(role);
+            logger.infof("revoking role %s from brokered user: %s", role.getName(), user.getUsername());
         } else {
         	// grant role when claim is here
             user.grantRole(role);
+            logger.infof("granting role %s to brokered user: %s", role.getName(), user.getUsername());
         }
     }
 
